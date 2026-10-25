@@ -1,0 +1,16 @@
+# 不随仓库发布的内容
+/output/
+.claude/
+.idea/
+.vscode/
+.mcp.json
+.gitmodules
+/.bashrc
+/.bash_profile
+/.profile
+/.zshrc
+/.zprofile
+/.gitconfig
+/.ripgreprc
+*.log
+.env

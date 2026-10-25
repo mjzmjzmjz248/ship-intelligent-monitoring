@@ -1,0 +1,86 @@
+# 演示参数：把需要等几分钟的规则压短，便于现场演示。不是验收标准。
+profile: demo
+timezone: Asia/Shanghai
+console_port: 8100
+
+device:
+  device_id: demo-edge-001
+  token_env: DEVICE_TOKEN
+  default_token: demo-device-token
+
+vessel:
+  vessel_id: demo-vessel-001
+  name: 演示船001
+  ship_type: 油船
+
+active_camera: bridge-cam-01
+
+cameras:
+  - camera_id: bridge-cam-01
+    scene: 驾驶室
+    name: 驾驶室摄像头
+    source: {kind: file, path: data/synthetic_duty.mp4, loop: true, tag: SYNTHETIC}
+    roi: {zone_id: bridge-duty-zone, anchor: center, points: [[0.25, 0.1], [0.75, 0.1], [0.75, 0.95], [0.25, 0.95]]}
+    alarms: [A1_BRIDGE_ABSENCE, A3_CAMERA_ABNORMAL]
+  - camera_id: dutyroom-cam-01
+    scene: 企业值班室
+    name: 值班室摄像头
+    source: {kind: file, path: data/synthetic_duty.mp4, loop: true, tag: SYNTHETIC}
+    roi: {zone_id: dutyroom-zone, anchor: center, points: [[0.25, 0.1], [0.75, 0.1], [0.75, 0.95], [0.25, 0.95]]}
+    alarms: [A2_DUTYROOM_ABSENCE, A3_CAMERA_ABNORMAL]
+
+detector:
+  model: models/yolo11n.pt
+  imgsz: 640
+  conf: 0.35
+  min_box_h: 60
+  target_fps: 5
+  max_result_age_sec: 1.0
+
+quality:
+  no_frame_sec: 2.0
+  dark_gray: 15
+  dark_ratio: 0.95
+  warmup_sec: 6.0
+
+telemetry:
+  scenario: configs/scenarios/basic.yaml
+  ttl_sec: 3.0
+  ais_gap_sec: 3.0
+  speed_zones:
+    - name: 演示限速区（虚构）
+      limit_kn: 8.0
+      polygon: [[121.40, 31.20], [121.60, 31.20], [121.60, 31.30], [121.40, 31.30], [121.40, 31.20]]
+
+evidence:
+  pre_sec: 5
+  post_sec: 5
+  fps: 15
+  retain_days: 7
+  quota_gb: 20
+
+sync:
+  shore_url: http://127.0.0.1:8000
+  heartbeat_sec: 5
+  config_poll_sec: 5
+  preview_fps: 2
+
+rules:
+  A1_BRIDGE_ABSENCE:
+    {trigger_sec: 10, recover_sec: 3, repeat_sec: 30, risk: HIGH, basis: 演示参数（标准见 standard.yaml）}
+  A2_DUTYROOM_ABSENCE:
+    {trigger_sec: 15, recover_sec: 3, repeat_sec: 60, risk: HIGH, basis: 演示参数}
+  A3_CAMERA_ABNORMAL:
+    {trigger_sec: 5, recover_sec: 3, repeat_sec: 60, risk: MEDIUM, basis: 演示参数}
+  A5_AIS_OFFLINE:
+    {trigger_sec: 15, recover_sec: 0, repeat_sec: 60, risk: MEDIUM, basis: 演示参数}
+  A6_OVERSPEED:
+    {trigger_sec: 10, recover_sec: 3, repeat_sec: 30, risk: MEDIUM, basis: 演示参数,
+     enter_margin_kn: 0.5, exit_margin_kn: 0.2}
+
+shore:
+  offline_after_sec: 20
+  offline_repeat_sec: 60
+  offline_basis: 演示参数（心跳 5 秒一次）
+  captain_deadline_sec: 60
+  late_window_sec: 30

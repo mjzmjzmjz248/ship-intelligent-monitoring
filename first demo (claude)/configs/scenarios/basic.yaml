@@ -1,0 +1,11 @@
+# 模拟船况时间轴（秒，从船端启动算起）。全部数据带 source_kind=SIMULATED。
+# 每段从 at 开始生效，直到下一段；最后一段之后循环回到开头（loop_sec）。
+# 控制台可随时手动覆盖航速、航行状态和 AIS 开关。
+loop_sec: 600
+segments:
+  - {at: 0,   nav_state: UNDERWAY, speed_kn: 6.0, position: [121.45, 31.25], ais: true}
+  - {at: 240, nav_state: UNDERWAY, speed_kn: 9.5, position: [121.47, 31.25], ais: true}
+  - {at: 300, nav_state: UNDERWAY, speed_kn: 6.5, position: [121.49, 31.25], ais: true}
+  - {at: 360, nav_state: UNDERWAY, speed_kn: 6.5, position: [121.51, 31.25], ais: false}
+  - {at: 420, nav_state: UNDERWAY, speed_kn: 6.0, position: [121.53, 31.25], ais: true}
+  - {at: 540, nav_state: MOORED,   speed_kn: 0.0, position: [121.55, 31.25], ais: true}

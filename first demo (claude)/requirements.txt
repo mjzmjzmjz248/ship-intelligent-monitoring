@@ -1,0 +1,13 @@
+# 船端 + 岸端运行依赖（Windows / Linux 通用）
+# Windows 安装 torch 默认即 CPU 版；Linux 建议加 --extra-index-url https://download.pytorch.org/whl/cpu
+numpy>=1.26
+opencv-python>=4.9
+ultralytics>=8.3
+imageio-ffmpeg>=0.5
+pyyaml>=6.0
+pydantic>=2.6
+fastapi>=0.110
+uvicorn>=0.29
+python-multipart>=0.0.9
+httpx>=0.27
+tzdata>=2024.1        # Windows 上 zoneinfo 需要它提供 Asia/Shanghai

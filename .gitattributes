@@ -1,0 +1,7 @@
+* text=auto
+*.sh text eol=lf
+*.pdf binary
+*.docx binary
+*.wav binary
+*.pt binary
+*.mp4 binary

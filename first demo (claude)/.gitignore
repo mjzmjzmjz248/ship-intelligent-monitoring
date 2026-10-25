@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+.pytest_cache/
+runtime/
+models/*.pt
+data/*.mp4
+!data/.keep
+*.part

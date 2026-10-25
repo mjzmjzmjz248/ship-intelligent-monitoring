@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>船端本地控制台</title>
+<style>
+  /* 与岸端 web/style.css 同一组颜色变量 */
+  :root { --bg: #f6f7f9; --surface: #fff; --line: #e6e8eb; --line-soft: #f0f1f3;
+    --text: #1f2329; --text-2: #5c6370; --text-3: #8a919c; --accent: #2f5bd3; --accent-soft: #eef2fd;
+    --danger: #d1343e; --danger-soft: #fdeeee; --warn: #b86e00; --warn-soft: #fdf4e5;
+    --ok: #1f8a4c; --ok-soft: #e9f6ef; --info: #6b7280; --info-soft: #f1f2f4; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-size: 14px;
+    font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", "Droid Sans Fallback", "Segoe UI", sans-serif; }
+  code { font-family: Consolas, "Cascadia Mono", monospace; font-size: 12px; word-break: break-all; color: var(--text-2); }
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--line); }
+  .topbar-in, .main { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+  .topbar-in { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 52px; padding-top: 8px; padding-bottom: 8px; }
+  .brand { font-weight: 600; font-size: 15px; margin-right: auto; }
+  .brand small { color: var(--text-3); font-weight: 400; font-size: 12px; margin-left: 6px; }
+  .main { padding-top: 20px; padding-bottom: 20px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; min-width: 0; }
+  .card h2 { font-size: 15px; font-weight: 600; margin: 0 0 12px; }
+  .muted { color: var(--text-3); font-size: 12px; }
+  .kv { display: grid; grid-template-columns: 84px minmax(0, 1fr); row-gap: 8px; column-gap: 12px; font-size: 13px; line-height: 1.6; }
+  .kv .k { color: var(--text-3); }
+  .pill { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px; border-radius: 999px; font-size: 12px; line-height: 20px;
+    white-space: nowrap; background: var(--info-soft); color: var(--info); }
+  .pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .pill.danger { background: var(--danger-soft); color: var(--danger); }
+  .pill.warning { background: var(--warn-soft); color: var(--warn); }
+  .pill.success { background: var(--ok-soft); color: var(--ok); }
+  .badge { display: inline-block; padding: 0 7px; border: 1px solid var(--line); border-radius: 4px; font-size: 12px; line-height: 20px;
+    color: var(--text-2); background: var(--surface); white-space: nowrap; }
+  .badge.sim { border-style: dashed; }
+  .badge.pend { color: var(--warn); border-color: #ecd2a6; }
+  .act { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 10px 12px; align-items: center; }
+  .act .k { color: var(--text-3); font-size: 13px; }
+  .btns { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  button { font: inherit; font-size: 13px; padding: 4px 12px; border: 1px solid #dcdfe4; background: var(--surface); color: var(--text);
+    border-radius: 6px; cursor: pointer; }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  button.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  input[type=number] { font: inherit; font-size: 13px; width: 70px; padding: 3px 6px; border: 1px solid #dcdfe4; border-radius: 6px; }
+  .sep { width: 1px; height: 18px; background: var(--line); margin: 0 2px; }
+  .HIGH { color: var(--danger); font-weight: 600; }
+  .MEDIUM { color: var(--warn); }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th { color: var(--text-3); font-weight: 500; background: #fafbfc; }
+  th, td { border-bottom: 1px solid var(--line-soft); padding: 8px 10px; text-align: left; vertical-align: top; }
+  .nw { white-space: nowrap; }
+  .audio-row { font-size: 13px; padding: 6px 0; border-top: 1px solid var(--line-soft); }
+  @media (max-width: 640px) {
+    .topbar-in, .main { padding-left: 16px; padding-right: 16px; }
+    .main { padding-top: 12px; }
+    .brand small { display: none; }
+    .grid { grid-template-columns: minmax(0, 1fr); }
+    .card { padding: 14px; }
+    .act { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+    .act .btns { margin-bottom: 8px; }
+    thead { display: none; }
+    tr { display: block; padding: 8px 0; border-bottom: 1px solid var(--line-soft); }
+    td { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 8px; border: none; padding: 2px 0; }
+    td::before { content: attr(data-l); color: var(--text-3); font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+<header class="topbar"><div class="topbar-in">
+  <span class="brand">船端本地控制台<small>断网时仍可在本机查看告警</small></span>
+  <span id="link" class="pill"></span><span id="sync" class="pill"></span><span id="prof"></span>
+</div></header>
+<main class="main">
+<div class="grid">
+  <div class="card">
+    <h2>运行状态</h2>
+    <div id="state" class="kv"></div>
+  </div>
+  <div class="card">
+    <h2>演示操作</h2>
+    <div class="act">
+      <span class="k">船岸同步</span>
+      <div class="btns"><button data-on="sync-off" onclick="post('/sync/off')">断开</button><button data-on="sync-on" onclick="post('/sync/on')">恢复</button></div>
+      <span class="k">故障注入</span>
+      <div class="btns"><button data-on="fault-stream_cut" onclick="post('/fault/stream_cut')">断流</button><button data-on="fault-black" onclick="post('/fault/black')">黑屏</button><button data-on="fault-none" onclick="post('/fault/clear')">清除</button></div>
+      <span class="k">航速</span>
+      <div class="btns"><input id="spd" type="number" step="0.5" value="10"> 节
+        <button onclick="sim({speed_kn: parseFloat(document.getElementById('spd').value)})">设置</button></div>
+      <span class="k">模拟船况</span>
+      <div class="btns">
+        <button data-on="nav-UNDERWAY" onclick="sim({nav_state:'UNDERWAY'})">航行</button><button data-on="nav-MOORED" onclick="sim({nav_state:'MOORED'})">停泊</button>
+        <span class="sep"></span>
+        <button data-on="ais-off" onclick="sim({ais:false})">AIS 中断</button><button onclick="sim({ais:true})">AIS 恢复</button>
+        <span class="sep"></span>
+        <button data-on="sim-scene" onclick="sim({clear:true})">按场景</button></div>
+      <span class="k">摄像头</span>
+      <div class="btns" id="cams"></div>
+      <span class="k">视频</span>
+      <div class="btns"><button onclick="post('/source/restart')">重新开始</button>
+        <button onclick="post('/source/pause')">暂停</button><button onclick="post('/source/resume')">继续</button></div>
+    </div>
+  </div>
+</div>
+<div class="card" style="margin-bottom:16px">
+  <h2>本地告警 <span class="muted">（不依赖岸端）</span></h2>
+  <table><thead><tr><th>触发时间</th><th>告警</th><th>风险</th><th>监测状态</th><th>播报</th><th>证据</th><th>rev</th></tr></thead>
+  <tbody id="events"></tbody></table>
+  <div id="noev" class="muted" style="padding-top:8px"></div>
+</div>
+<div class="card">
+  <h2>最近播报</h2>
+  <div id="audio"></div>
+</div>
+</main>
+<script>
+const NAMES = {A1_BRIDGE_ABSENCE:'驾驶室无人在岗', A2_DUTYROOM_ABSENCE:'值班室离岗', A3_CAMERA_ABNORMAL:'视频设备异常',
+  A5_AIS_OFFLINE:'AIS设备异常', A6_OVERSPEED:'航速违规'};
+const COND = {ACTIVE:['告警中','danger'], UNKNOWN:['状态未知','warning'], RECOVERED:['已恢复','success'],
+  PRECONDITION_ENDED:['前置条件结束',''], INTERRUPTED:['已中断','']};
+const EVI = {PENDING:'采集/编码中', READY:'已定稿', PARTIAL:'不完整', FAILED:'失败', NOT_APPLICABLE:'不适用', VERIFIED:'已校验'};
+const SOURCE = {SYNTHETIC:'合成测试视频', LAB_REPLAY:'实验室录像回放', LIVE_USB:'USB摄像头', LIVE_RTSP:'RTSP摄像头'};
+const QUALITY = {VALID:'有效', DARK:'画面过暗', NO_FRAME:'无画面', STALE:'识别滞后', WARMUP:'预热中', ENDED:'视频结束'};
+const FAULT = {stream_cut:'断流', black:'黑屏'};
+const RISK = {HIGH:'高风险', MEDIUM:'中风险', LOW:'低风险'};
+const SUBTYPES = {STREAM_LOST:'断流', BLACK_SCREEN:'明显黑屏'};
+const fmt = s => s ? new Date(s).toLocaleString('zh-CN', {hour12:false, month:'2-digit', day:'2-digit',
+  hour:'2-digit', minute:'2-digit', second:'2-digit'}) : '-';
+const $ = id => document.getElementById(id);
+const pill = (text, type) => `<span class="pill ${type || ''}">${text}</span>`;
+async function post(path, body) {
+  await fetch(path, {method:'POST', headers:{'Content-Type':'application/json'}, body: body ? JSON.stringify(body) : null});
+  refresh();
+}
+const sim = b => post('/sim', b);
+async function refresh() {
+  const s = await (await fetch('/status')).json();
+  const h = s.health, t = h.telemetry, ov = t.overrides || {};
+  $('link').outerHTML = `<span id="link" class="pill ${s.link_online ? 'success' : 'danger'}">${s.link_online ? '岸端在线' : '岸端未连接'}</span>`;
+  $('sync').outerHTML = `<span id="sync" class="pill ${h.sync_enabled ? 'success' : 'warning'}">${h.sync_enabled ? '同步开启' : '同步已断开'}</span>`;
+  $('prof').innerHTML = `<span class="badge">参数 ${h.profile} v${s.config_version}</span>` +
+    (h.profile === 'standard' ? ' <span class="badge pend">含待确认项</span>' : '');
+  $('state').innerHTML = `
+    <span class="k">摄像头</span><span><b>${h.camera_id}</b>（${h.scene || '-'}）· ${h.source_state}</span>
+    <span class="k">数据来源</span><span><span class="badge sim">视频：${SOURCE[h.source_tag] || h.source_tag || '-'}</span> <span class="badge sim">船况：模拟</span></span>
+    <span class="k">观测</span><span>${pill(QUALITY[h.quality] || h.quality || '-', h.quality === 'VALID' ? 'success' : 'warning')}
+      ROI 内人数 <b>${h.roi_count ?? '-'}</b></span>
+    <span class="k">识别</span><span>${h.detect_fps} 次/秒，单帧 ${h.infer_ms ?? '-'} ms</span>
+    <span class="k">船况</span><span>${t.nav_state === 'UNDERWAY' ? '航行' : t.nav_state === 'MOORED' ? '停泊' : (t.nav_state || '-')}，${t.speed_kn ?? '-'} 节，AIS 最近报文 ${t.last_ais_at != null ? t.last_ais_at.toFixed(0)+' 秒' : '无'} <span class="muted">（模拟）</span></span>
+    <span class="k">故障注入</span><span>${h.fault ? pill(FAULT[h.fault] || h.fault, 'warning') : '无'}</span>
+    <span class="k">播报方式</span><span>${h.audio_backend === 'none' ? '无音频设备（只记录日志，未实际播放）' : h.audio_backend}</span>
+    <span class="k">待上传</span><span>${h.outbox_pending} 条，失败 ${h.outbox_dead} 条${s.outbox_error ? '<br><code>'+s.outbox_error+'</code>' : ''}</span>`;
+  const on = new Set([h.sync_enabled ? 'sync-on' : 'sync-off', 'fault-' + (h.fault || 'none')]);
+  if (ov.nav_state) on.add('nav-' + ov.nav_state);
+  if (ov.ais === false) on.add('ais-off');
+  if (!Object.keys(ov).length) on.add('sim-scene');
+  document.querySelectorAll('[data-on]').forEach(b => b.classList.toggle('on', on.has(b.dataset.on)));
+  $('cams').innerHTML = s.cameras.map(c =>
+    `<button class="${c.camera_id === h.camera_id ? 'on' : ''}" onclick="post('/camera/${c.camera_id}')">${c.name}</button>`).join('');
+  $('events').innerHTML = s.events.map(e => {
+    const c = COND[e.condition_status] || [e.condition_status, ''];
+    return `<tr>
+    <td data-l="触发时间" class="nw">${fmt(e.triggered_at)}</td><td data-l="告警">${NAMES[e.alarm_type] || e.alarm_type}${e.subtype ? '<span class="muted">（'+(SUBTYPES[e.subtype] || e.subtype)+'）</span>' : ''}</td>
+    <td data-l="风险" class="${e.risk} nw">${RISK[e.risk] || e.risk}</td>
+    <td data-l="监测状态"><span>${pill(c[0], c[1])}${e.ended_reason ? ' <span class="muted">'+e.ended_reason+'</span>' : ''}</span></td>
+    <td data-l="播报" class="nw">${fmt(e.sound_started_at)}</td>
+    <td data-l="证据">${(e.evidence||[]).map(x => (x.kind === 'snapshot' ? '图' : '视频')+' '+(EVI[x.status] || x.status)).join('，') || '-'}</td>
+    <td data-l="rev">${e.revision}</td></tr>`;
+  }).join('');
+  $('noev').textContent = s.events.length ? '' : '暂无告警';
+  $('audio').innerHTML = (s.audio || []).slice().reverse().map(a => `<div class="audio-row">
+    ${new Date(a.started * 1000).toLocaleTimeString('zh-CN', {hour12:false})} · ${NAMES[a.alarm] || a.alarm} · ${a.kind}
+    ${a.backend === 'none' ? '<span class="muted">（未实际播放：无音频设备）</span>' : ''}</div>`).join('') || '<div class="muted">暂无</div>';
+}
+refresh(); setInterval(refresh, 1000);
+</script>
+</body>
+</html>

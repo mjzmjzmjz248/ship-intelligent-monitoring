@@ -1,0 +1,8 @@
+video_id,start_s,end_s,state,note
+synthetic_duty,0,20,present,合成视频真值
+synthetic_duty,20,40,absent,合成视频真值
+synthetic_duty,40,55,present,合成视频真值
+synthetic_duty,55,62,absent,合成视频真值
+synthetic_duty,62,72,present,合成视频真值
+synthetic_duty,72,82,dark,合成视频真值
+synthetic_duty,82,100,present,合成视频真值
